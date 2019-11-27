@@ -16,7 +16,7 @@ class _SplashState extends State<Splash> {
   @override
   initState() {
     super.initState();
-    FirebaseAuth.instance.signOut();
+    // FirebaseAuth.instance.signOut();
     // Add listeners to this class
     validarUsuario();
   }
