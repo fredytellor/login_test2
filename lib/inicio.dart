@@ -108,16 +108,14 @@ class _InicioState extends State<Inicio> {
     }
 
     Widget imgWid() {
-      if (data.imgUrl != null) {
+      if (_image != null) {
+        return Image.file(_image);
+      } else if (data.imgUrl != null) {
         return Image.network(data.imgUrl);
       } else {
-        if (_image == null) {
-          return Image.network(
-            'https://www.thedayspring.com.pk/wp-content/uploads/2019/09/No-Image.png',
-          );
-        } else {
-          return Image.file(_image);
-        }
+        return Image.network(
+          'https://www.thedayspring.com.pk/wp-content/uploads/2019/09/No-Image.png',
+        );
       }
     }
 

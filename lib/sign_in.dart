@@ -261,83 +261,85 @@ class _SignInState extends State<SignIn> {
       appBar: AppBar(
         title: Text('Sign in'),
       ),
-      body: Column(
-        children: <Widget>[
-          Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                TextFormField(
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    hintText: 'Correo electronico',
+      body: SingleChildScrollView(
+              child: Column(
+          children: <Widget>[
+            Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  TextFormField(
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      hintText: 'Correo electronico',
+                    ),
+                    validator: (value) {
+                      if (value.isEmpty ||
+                          !RegExp(r'^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$')
+                              .hasMatch(value)) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      correo = value;
+                    },
                   ),
-                  validator: (value) {
-                    if (value.isEmpty ||
-                        !RegExp(r'^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$')
-                            .hasMatch(value)) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    correo = value;
-                  },
-                ),
-                SizedBox(
-                  height: 15,
-                ),
-                TextFormField(
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    hintText: 'Contraseña',
+                  SizedBox(
+                    height: 15,
                   ),
-                  validator: (value) {
-                    if (value.isEmpty) {
-                      return 'Please enter some text';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    contra = value;
-                  },
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: Center(
-                    child: RaisedButton(
-                      onPressed: () {
-                        if (_formKey.currentState.validate()) {
-                          _formKey.currentState.save();
-                          signIn(correo, contra);
-                        }
-                      },
-                      child: Text('Submit'),
+                  TextFormField(
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      hintText: 'Contraseña',
+                    ),
+                    validator: (value) {
+                      if (value.isEmpty) {
+                        return 'Please enter some text';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      contra = value;
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Center(
+                      child: RaisedButton(
+                        onPressed: () {
+                          if (_formKey.currentState.validate()) {
+                            _formKey.currentState.save();
+                            signIn(correo, contra);
+                          }
+                        },
+                        child: Text('Submit'),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Text(msgTxt),
-          SizedBox(
-            height: 10,
-          ),
-          RaisedButton(
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-                return Registro();
-              }));
-            },
-            child: Text('Registrarse'),
-          ),
-          SizedBox(
-            height: 10,
-          ),
-          _buildFacebookLoginButton(),
-          _buildGoogleLoginButton(),
-        ],
+            Text(msgTxt),
+            SizedBox(
+              height: 10,
+            ),
+            RaisedButton(
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                  return Registro();
+                }));
+              },
+              child: Text('Registrarse'),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            _buildFacebookLoginButton(),
+            _buildGoogleLoginButton(),
+          ],
+        ),
       ),
     );
   }
