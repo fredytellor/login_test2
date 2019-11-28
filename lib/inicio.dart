@@ -7,6 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'models/user.dart';
 import './menu_drawer.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 
 class Inicio extends StatefulWidget {
   String uid;
@@ -23,6 +26,8 @@ class _InicioState extends State<Inicio> {
   File _image;
   StorageUploadTask upload;
   StreamSubscription<StorageTaskEvent> streamSubscription;
+  double lat = 40.6643;
+  double long = -73.9385;
 
   @override
   void initState() {
@@ -122,12 +127,20 @@ class _InicioState extends State<Inicio> {
       }
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Loged in'),
-      ),
-      drawer: DrawerMenu(),
-      body: SingleChildScrollView(
+    Future<Position> _getPosition() async {
+      Position position = await Geolocator()
+          .getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
+          .then((value) {
+        setState(() {
+          lat = value.latitude;
+          long = value.longitude;
+        });
+      });
+      return position;
+    }
+
+    _buildPerfil() {
+      return SingleChildScrollView(
         child: Column(
           children: <Widget>[
             Container(
@@ -136,13 +149,13 @@ class _InicioState extends State<Inicio> {
               child: Row(
                 children: <Widget>[
                   Container(
-                    padding: EdgeInsets.all(10),
+                    padding: EdgeInsets.all(5),
                     height: 200,
-                    width: 200,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(50),
-                        child: imgWid(),
-                      ),
+                    width: 180,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(50),
+                      child: imgWid(),
+                    ),
                   ),
                   Container(
                     width: 150,
@@ -212,7 +225,55 @@ class _InicioState extends State<Inicio> {
             ),
           ],
         ),
+      );
+    }
+
+    Completer<GoogleMapController> mapController = Completer();
+
+    _buildUbicacion() {
+      return Container(
+        padding: EdgeInsets.all(10),
+        height: 400,
+        width: 400,
+        child: GoogleMap(
+          mapType: MapType.normal,
+          myLocationEnabled: true,
+          onMapCreated: (GoogleMapController controller) {
+            mapController.complete(controller);
+          },
+          initialCameraPosition: CameraPosition(
+            bearing: 192.8334901395799,
+            target: LatLng(lat, long),
+            tilt: 10,
+            zoom: 10,
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Perfil'),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+              icon: Icon(
+                Icons.perm_identity,
+                color: Colors.blueAccent,
+              ),
+              title: Text('perfil')),
+          BottomNavigationBarItem(
+              //icon: Icon(CupertinoIcons.location),
+              icon: Icon(
+                Icons.map,
+                color: Colors.deepOrange,
+              ),
+              title: Text('ubicacion')),
+        ],
+      ),
+      drawer: DrawerMenu(),
+      body: _buildUbicacion(),
       floatingActionButton: FloatingActionButton(
         onPressed: getImage,
         tooltip: 'Pick Image',

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 class DrawerMenu extends StatelessWidget {
@@ -7,7 +9,7 @@ class DrawerMenu extends StatelessWidget {
       child: Column(
         children: <Widget>[
           Container(
-            padding: EdgeInsets.only(top: 50,left: 10),
+            padding: EdgeInsets.only(top: 50, left: 10),
             width: double.infinity,
             height: 100,
             child: Text(
@@ -19,13 +21,36 @@ class DrawerMenu extends StatelessWidget {
               ),
             ),
           ),
-          ListTile(
-            leading: Icon(Icons.account_circle),
-            title: Text(
-              'Mi perfil',           
+          Container(
+            margin: EdgeInsets.only(top: 5,bottom: 5,right: 80),
+            width: 220,
+            height: 0.5,
+            decoration: BoxDecoration(
+              border: Border.all(width: 1,color: Colors.grey),
             ),
-            onTap: (){},
           ),
+          Card(
+            child: ListTile(
+              leading: Icon(
+                Icons.account_circle,
+                color: Colors.green,
+              ),
+              title: Text(
+                'Mi perfil',
+              ),
+              onTap: () {},
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: Icon(
+                Icons.cancel,
+                color: Colors.redAccent,
+              ),
+              title: Text('Salir'),
+              onTap: () {},
+            ),
+          )
         ],
       ),
     );

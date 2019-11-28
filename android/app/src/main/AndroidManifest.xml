@@ -8,7 +8,9 @@
          FlutterApplication and put your custom class here. -->
 
   <uses-permission android:name="android.permission.INTERNET"/>
-
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/> 
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/> 
+  
     <application
         android:name="io.flutter.app.FlutterApplication"
         android:label="login_test2"
@@ -44,5 +46,9 @@
         <data android:scheme="@string/fb_login_protocol_scheme" />
     </intent-filter>
 </activity>
+    <meta-data android:name="com.google.android.maps.v2.API_KEY"
+               android:value="AIzaSyBt8BsTKYzpZQPg9qtrDtIAqs9xSO_8tvA"/>
     </application>
 </manifest>
+
+

@@ -2,11 +2,9 @@
 
 // This example shows a [Form] with one [TextFormField] and a [RaisedButton]. A
 // [GlobalKey] is used here to identify the [Form] and validate input.
+
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:login_test2/inicio.dart';
-import 'package:login_test2/registro.dart';
 import 'package:login_test2/registro_social_media.dart';
 import 'package:login_test2/sign_in.dart';
 import 'package:login_test2/splash.dart';
@@ -46,194 +44,63 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   Widget build(BuildContext context) {
     
   }
-}
-/*
-import 'package:firebase_auth/firebase_auth.dart';
+}/*
+
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_facebook_login/flutter_facebook_login.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 void main() => runApp(MyApp());
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   @override
-  State<StatefulWidget> createState() {
-    return _MyAppState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Google Maps Demo',
+      home: MapSample(),
+    );
   }
 }
 
-class _MyAppState extends State<MyApp> {
-  var loggedIn = false;
-  var firebaseAuth = FirebaseAuth.instance;
+class MapSample extends StatefulWidget {
+  @override
+  State<MapSample> createState() => MapSampleState();
+}
 
-  // This widget is the root of your application.
+class MapSampleState extends State<MapSample> {
+  Completer<GoogleMapController> _controller = Completer();
+
+  static final CameraPosition _kGooglePlex = CameraPosition(
+    target: LatLng(37.42796133580664, -122.085749655962),
+    zoom: 14.4746,
+  );
+
+  static final CameraPosition _kLake = CameraPosition(
+      bearing: 192.8334901395799,
+      target: LatLng(37.43296265331129, -122.08832357078792),
+      tilt: 59.440717697143555,
+      zoom: 19.151926040649414);
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: _buildSocialLogin());
-  }
-
-  _buildSocialLogin() {
-    return Scaffold(
-      body: Container(
-          color: Color.fromRGBO(0, 207, 179, 1),
-          child: Center(
-            child: loggedIn
-                ? Text("Logged In! :)",
-                    style: TextStyle(color: Colors.white, fontSize: 40))
-                : Stack(
-                    children: <Widget>[
-                      SizedBox.expand(
-                        child: _buildSignUpText(),
-                      ),
-                      Container(
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            // wrap height
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            // stretch across width of screen
-                            children: <Widget>[
-                              _buildFacebookLoginButton(),
-                              _buildGoogleLoginButton(),
-                            ],
-                          ),
-                        ),
-                      )
-                    ],
-                  ),
-          )),
-    );
-  }
-
-  Container _buildGoogleLoginButton() {
-    return Container(
-      margin: EdgeInsets.only(left: 16, top: 16, right: 16, bottom: 0),
-      child: ButtonTheme(
-        height: 48,
-        child: RaisedButton(
-            onPressed: () {
-              initiateSignIn("G");
-            },
-            color: Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            textColor: Color.fromRGBO(122, 122, 122, 1),
-            child: Text("Connect with Google",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ))),
+    return new Scaffold(
+      body: GoogleMap(
+        initialCameraPosition: _kGooglePlex,
+        onMapCreated: (GoogleMapController controller) {
+          _controller.complete(controller);
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _goToTheLake,
+        label: Text('To the lake!'),
+        icon: Icon(Icons.directions_boat),
       ),
     );
   }
 
-  Container _buildFacebookLoginButton() {
-    return Container(
-      margin: EdgeInsets.only(left: 16, top: 0, right: 16, bottom: 0),
-      child: ButtonTheme(
-        height: 48,
-        child: RaisedButton(
-            materialTapTargetSize: MaterialTapTargetSize.padded,
-            onPressed: () {
-              initiateSignIn("FB");
-            },
-            color: Color.fromRGBO(27, 76, 213, 1),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            textColor: Colors.white,
-            child: Text(
-              "Connect with Facebook",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            )),
-      ),
-    );
+  Future<void> _goToTheLake() async {
+    final GoogleMapController controller = await _controller.future;
+    controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
   }
-
-  Container _buildSignUpText() {
-    return Container(
-      margin: EdgeInsets.only(top: 76),
-      child: Text(
-        "Sign Up",
-        textAlign: TextAlign.center,
-        style: TextStyle(
-            color: Color.fromRGBO(255, 255, 255, 1),
-            fontSize: 42,
-            fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  void initiateSignIn(String type) {
-    _handleSignIn(type).then((result) {
-      if (result == 1) {
-        setState(() {
-          loggedIn = true;
-        });
-      } else {
-
-      }
-    });
-  }
-
-  Future<int> _handleSignIn(String type) async {
-    switch (type) {
-      case "FB":
-        FacebookLoginResult facebookLoginResult = await _handleFBSignIn();
-        final accessToken = facebookLoginResult.accessToken.token;
-        if (facebookLoginResult.status == FacebookLoginStatus.loggedIn) {
-          final facebookAuthCred =
-              FacebookAuthProvider.getCredential(accessToken: accessToken);
-          final user = await firebaseAuth.signInWithCredential(facebookAuthCred);
-          //print("User : " + user.displayName);
-          print("User : " + user.user.uid);
-          return 1;
-        } else
-          return 0;
-        break;
-      case "G":
-        try {
-          GoogleSignInAccount googleSignInAccount = await _handleGoogleSignIn();
-          final googleAuth = await googleSignInAccount.authentication;
-          final googleAuthCred = GoogleAuthProvider.getCredential(
-              idToken: googleAuth.idToken, accessToken: googleAuth.accessToken);
-          final user = await firebaseAuth.signInWithCredential(googleAuthCred);
-          //print("User : " + user.displayName);
-          print("User : " + user.user.uid);
-          return 1;
-        } catch (error) {
-          return 0;
-        }
-    }
-    return 0;
-  }
-
-  Future<FacebookLoginResult> _handleFBSignIn() async {
-    FacebookLogin facebookLogin = FacebookLogin();
-    FacebookLoginResult facebookLoginResult =
-        await facebookLogin.logIn(['email']);
-        //await facebookLogin.logInWithReadPermissions(['email']);
-    switch (facebookLoginResult.status) {
-      case FacebookLoginStatus.cancelledByUser:
-        print("Cancelled");
-        break;
-      case FacebookLoginStatus.error:
-        print("error");
-        break;
-      case FacebookLoginStatus.loggedIn:
-        print("Logged In");
-        break;
-    }
-    return facebookLoginResult;
-  }
-
-  Future<GoogleSignInAccount> _handleGoogleSignIn() async {
-    GoogleSignIn googleSignIn = GoogleSignIn(
-        scopes: ['email', 'https://www.googleapis.com/auth/contacts.readonly']);
-    GoogleSignInAccount googleSignInAccount = await googleSignIn.signIn();
-    return googleSignInAccount;
-  }
-  
 }*/
