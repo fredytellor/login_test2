@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'models/user.dart';
+import './menu_drawer.dart';
 
 class Inicio extends StatefulWidget {
   String uid;
@@ -111,7 +112,9 @@ class _InicioState extends State<Inicio> {
       if (_image != null) {
         return Image.file(_image);
       } else if (data.imgUrl != null) {
-        return Image.network(data.imgUrl);
+        return Image.network(
+          data.imgUrl,
+        );
       } else {
         return Image.network(
           'https://www.thedayspring.com.pk/wp-content/uploads/2019/09/No-Image.png',
@@ -123,11 +126,7 @@ class _InicioState extends State<Inicio> {
       appBar: AppBar(
         title: Text('Loged in'),
       ),
-      drawer: Drawer(
-        child: Center(
-          child: Text('Drawer!!'),
-        ),
-      ),
+      drawer: DrawerMenu(),
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
@@ -136,23 +135,17 @@ class _InicioState extends State<Inicio> {
               padding: EdgeInsets.all(10),
               child: Row(
                 children: <Widget>[
-                  Expanded(
-                    child: Container(
-                      padding: EdgeInsets.all(10),
-                      height: 200,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.deepPurple,
+                  Container(
+                    padding: EdgeInsets.all(10),
+                    height: 200,
+                    width: 200,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(50),
                         child: imgWid(),
-                        /* _image == null
-                            ? Image.network(
-                                'https://www.thedayspring.com.pk/wp-content/uploads/2019/09/No-Image.png',
-                              )
-                            : Image.file(_image),*/
                       ),
-                    ),
                   ),
                   Container(
-                    width: 200,
+                    width: 150,
                     child: Column(
                       children: <Widget>[
                         SizedBox(
