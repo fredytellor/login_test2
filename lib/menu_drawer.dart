@@ -40,7 +40,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
                 color: Colors.green,
               ),
               title: Text(
-                'Mi perfil',
+                'Mi perfil / Mapa',
               ),
               onTap: () {
                 Navigator.of(context).pop();

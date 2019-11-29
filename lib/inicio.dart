@@ -32,6 +32,10 @@ class _InicioState extends State<Inicio> {
   GoogleMapController mapController;
   Set<Marker> _markers = {};
   LatLng _mapPosition = LatLng(40.6643, -73.9385);
+  TextEditingController mapTextController = TextEditingController();
+  double distance;
+  String _address;
+  List <Placemark> placemark;
 
   @override
   void initState() {
@@ -69,7 +73,6 @@ class _InicioState extends State<Inicio> {
 
   @override
   Widget build(BuildContext context) {
-    //final Map<String, dynamic> data = ModalRoute.of(context).settings.arguments;
     final User data = ModalRoute.of(context).settings.arguments;
 
     String mostrarTexto(String texto) {
@@ -243,26 +246,30 @@ class _InicioState extends State<Inicio> {
       );
     }
 
-    /*  void _onCameraMove(CameraPosition position) {
-      _mapPosition = position.target;
+    void _getAddress(double lati,double longi)async{
+
+        placemark=await Geolocator().placemarkFromCoordinates(lati, longi);
+       _address=placemark[0].name.toString()+','+placemark[0].locality.toString()+','+placemark[0].postalCode.toString();   
     }
-*/
+
     void _putMarker(LatLng pos) {
       if (_markers.length == 1) {
         _markers.clear();
       }
       setState(() {
         _mapPosition = pos;
+        _getAddress(_mapPosition.latitude, _mapPosition.longitude);
         _markers.add(
           Marker(
             markerId: MarkerId(_mapPosition.toString()),
             position: _mapPosition,
             infoWindow: InfoWindow(
-                title:
-                    'lat:${_mapPosition.latitude.toString()},long:${_mapPosition.longitude.toString()}'),
+                title: _address,
           ),
-        );
+        ),
+      );
       });
+       
     }
 
     void _removeMarkers() {
@@ -271,13 +278,23 @@ class _InicioState extends State<Inicio> {
       });
     }
 
+    _buildListResults(){
+      return showModalBottomSheet();
+    }
+
+    void _buscarLugar() async{
+      placemark= await Geolocator().placemarkFromAddress(mapTextController.text.trim());
+      var lugarBuscado = LatLng(placemark[0].position.latitude,placemark[0].position.latitude);
+      _putMarker(lugarBuscado);
+    }
+
     _buildUbicacion() {
       return Scaffold(
         appBar: AppBar(
           title: Text('Ubicaciones'),
         ),
         drawer: DrawerMenu(),
-        body: Column(
+        body: Stack(
           children: <Widget>[
             Container(
               height: MediaQuery.of(context).size.height - 183,
@@ -301,15 +318,44 @@ class _InicioState extends State<Inicio> {
                 zoomGesturesEnabled: true,
                 scrollGesturesEnabled: true,
                 markers: _markers,
-                //   onCameraMove: _onCameraMove,
                 onTap: (pos) {
                   _putMarker(pos);
                 },
               ),
             ),
+            
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                    color: Colors.white70,
+                    border: Border.all(width: 2, color: Colors.black26)),
+                height: 50,
+                width: MediaQuery.of(context).size.width,
+                child: TextField(
+                  controller: mapTextController,
+                  onEditingComplete: () {
+                    mapTextController.text;
+                    _buscarLugar();
+                  },
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      wordSpacing: 2.0,
+                      color: Colors.black),
+                  decoration: InputDecoration(
+                      icon: Icon(
+                        Icons.business,
+                      ),
+                      hintText: 'str,adrs,places',
+                      hintStyle:
+                          TextStyle(fontWeight: FontWeight.w500, fontSize: 18)),
+                ),
+              ),
+            ),
           ],
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
           mini: true,
           onPressed: _removeMarkers,
