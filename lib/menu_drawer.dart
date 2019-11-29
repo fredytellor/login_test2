@@ -1,8 +1,12 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class DrawerMenu extends StatelessWidget {
+class DrawerMenu extends StatefulWidget {
+  @override
+  _DrawerMenuState createState() => _DrawerMenuState();
+}
+
+class _DrawerMenuState extends State<DrawerMenu> {
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -22,11 +26,11 @@ class DrawerMenu extends StatelessWidget {
             ),
           ),
           Container(
-            margin: EdgeInsets.only(top: 5,bottom: 5,right: 80),
+            margin: EdgeInsets.only(top: 5, bottom: 5, right: 80),
             width: 220,
             height: 0.5,
             decoration: BoxDecoration(
-              border: Border.all(width: 1,color: Colors.grey),
+              border: Border.all(width: 1, color: Colors.grey),
             ),
           ),
           Card(
@@ -38,7 +42,9 @@ class DrawerMenu extends StatelessWidget {
               title: Text(
                 'Mi perfil',
               ),
-              onTap: () {},
+              onTap: () {
+                Navigator.of(context).pop();
+              },
             ),
           ),
           Card(
@@ -48,7 +54,13 @@ class DrawerMenu extends StatelessWidget {
                 color: Colors.redAccent,
               ),
               title: Text('Salir'),
-              onTap: () {},
+              onTap: () {
+                setState(() {
+                  FirebaseAuth.instance.signOut();
+                  Navigator.of(context).pushNamed('/');
+                  print('desconectado');
+                });
+              },
             ),
           )
         ],

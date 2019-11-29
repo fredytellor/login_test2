@@ -28,6 +28,10 @@ class _InicioState extends State<Inicio> {
   StreamSubscription<StorageTaskEvent> streamSubscription;
   double lat = 40.6643;
   double long = -73.9385;
+  int _index = 0;
+  GoogleMapController mapController;
+  Set<Marker> _markers = {};
+  LatLng _mapPosition = LatLng(40.6643, -73.9385);
 
   @override
   void initState() {
@@ -86,29 +90,41 @@ class _InicioState extends State<Inicio> {
       Firestore db = Firestore.instance;
       FirebaseUser user = await FirebaseAuth.instance.currentUser();
       String uid = user.uid;
-      var nuevo = {
-        'nombre': nombre,
-        'apellido': apellido,
-        'profile_pic': imgUrl.toString(),
-      };
+      var nuevo;
+      if (widget.profilePic != null) {
+        nuevo = {
+          'nombre': nombre,
+          'apellido': apellido,
+          'profile_pic': imgUrl.toString(),
+        };
+      } else {
+        nuevo = {
+          'nombre': nombre,
+          'apellido': apellido,
+        };
+      }
       db.collection('usuarios').document(uid).updateData(nuevo);
       print('Update info completado');
     }
 
     Future<String> uploadPic() async {
-      FirebaseUser user = await FirebaseAuth.instance.currentUser();
-      String uid = user.uid;
-      storageReference = FirebaseStorage().ref().child('/profile_pics/${uid}');
-      upload = storageReference.putData(_image.readAsBytesSync());
-      streamSubscription = upload.events.listen((event) {
-        print('EVENT ${event.type}');
-      });
-      /*await upload.onComplete;
+      if (_image != null) {
+        FirebaseUser user = await FirebaseAuth.instance.currentUser();
+        String uid = user.uid;
+        storageReference =
+            FirebaseStorage().ref().child('/profile_pics/${uid}');
+        upload = storageReference.putData(_image.readAsBytesSync());
+        streamSubscription = upload.events.listen((event) {
+          print('EVENT ${event.type}');
+        });
+        /*await upload.onComplete;
        widget.profilePic = storageReference.getDownloadURL();*/
-      widget.profilePic = await (await upload.onComplete).ref.getDownloadURL();
-      //updateURLPic(widget.profilePic);
-      streamSubscription.cancel();
-      print('update pic completado');
+        widget.profilePic =
+            await (await upload.onComplete).ref.getDownloadURL();
+        //updateURLPic(widget.profilePic);
+        streamSubscription.cancel();
+        print('update pic completado');
+      }
       updateData(
           nameController.text, lastNameController.text, widget.profilePic);
     }
@@ -140,145 +156,203 @@ class _InicioState extends State<Inicio> {
     }
 
     _buildPerfil() {
-      return SingleChildScrollView(
-        child: Column(
-          children: <Widget>[
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(10),
-              child: Row(
-                children: <Widget>[
-                  Container(
-                    padding: EdgeInsets.all(5),
-                    height: 200,
-                    width: 180,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(50),
-                      child: imgWid(),
-                    ),
-                  ),
-                  Container(
-                    width: 150,
-                    child: Column(
-                      children: <Widget>[
-                        SizedBox(
-                          height: 10,
-                        ),
-                        TextField(
-                          controller: nameController,
-                          decoration: InputDecoration(
-                            hintText: 'Nombre',
-                            labelText: mostrarTexto('nombre'),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        TextField(
-                          controller: lastNameController,
-                          decoration: InputDecoration(
-                            hintText: 'Apellido',
-                            labelText: mostrarTexto('apellido'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                RaisedButton(
-                  child: Text('sign out'),
-                  onPressed: () {
-                    FirebaseAuth.instance.signOut();
-                    Navigator.of(context).pushReplacementNamed('/signin');
-                  },
-                ),
-                SizedBox(
-                  width: 10,
-                ),
-                Column(
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Perfil'),
+        ),
+        body: SingleChildScrollView(
+          child: Column(
+            children: <Widget>[
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(10),
+                child: Row(
                   children: <Widget>[
-                    Text(
-                      'Guardar',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                    Container(
+                      padding: EdgeInsets.all(5),
+                      height: 200,
+                      width: 180,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(50),
+                        child: imgWid(),
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.save,
-                        size: 35,
+                    Container(
+                      width: 150,
+                      child: Column(
+                        children: <Widget>[
+                          SizedBox(
+                            height: 10,
+                          ),
+                          TextField(
+                            controller: nameController,
+                            decoration: InputDecoration(
+                              hintText: 'Nombre',
+                              labelText: mostrarTexto('nombre'),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          TextField(
+                            controller: lastNameController,
+                            decoration: InputDecoration(
+                              hintText: 'Apellido',
+                              labelText: mostrarTexto('apellido'),
+                            ),
+                          ),
+                        ],
                       ),
-                      onPressed: () {
-                        uploadPic();
-                      },
-                      tooltip: 'Actualiza la informacion',
                     ),
                   ],
                 ),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-
-    Completer<GoogleMapController> mapController = Completer();
-
-    _buildUbicacion() {
-      return Container(
-        padding: EdgeInsets.all(10),
-        height: 400,
-        width: 400,
-        child: GoogleMap(
-          mapType: MapType.normal,
-          myLocationEnabled: true,
-          onMapCreated: (GoogleMapController controller) {
-            mapController.complete(controller);
-          },
-          initialCameraPosition: CameraPosition(
-            bearing: 192.8334901395799,
-            target: LatLng(lat, long),
-            tilt: 10,
-            zoom: 10,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  Column(
+                    children: <Widget>[
+                      Padding(
+                        padding: const EdgeInsets.only(right: 50),
+                        child: Text(
+                          'Guardar',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        padding: EdgeInsets.only(right: 50),
+                        icon: Icon(
+                          Icons.save,
+                          size: 35,
+                        ),
+                        onPressed: () {
+                          uploadPic();
+                        },
+                        tooltip: 'Actualiza la informacion',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       );
     }
 
+    void _onCameraMove(CameraPosition position) {
+      _mapPosition = position.target;
+    }
+
+    void _putMarker(LatLng pos) {
+      setState(() {
+        _mapPosition = pos;
+        _markers.add(Marker(
+          markerId: MarkerId(_mapPosition.toString()),
+          position: _mapPosition,
+          infoWindow: InfoWindow(
+              title:
+                  'lat:${_mapPosition.latitude.toString()},long:${_mapPosition.longitude.toString()}'),
+        ));
+      });
+    }
+
+    void _removeMarkers() {
+      setState(() {
+        _markers = {};
+      });
+    }
+
+    _buildUbicacion() {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Ubicaciones'),
+        ),
+        drawer: DrawerMenu(),
+        body: Column(
+          children: <Widget>[
+            Container(
+              height: MediaQuery.of(context).size.height - 136,
+              width: MediaQuery.of(context).size.width,
+              child: GoogleMap(
+                //mapa
+                onLongPress: (pos) {
+                  _putMarker(pos);
+                },
+                mapType: MapType.normal,
+                myLocationEnabled: true,
+                onMapCreated: (GoogleMapController controller) {
+                  mapController = controller;
+                  _getPosition();
+                },
+                initialCameraPosition: CameraPosition(
+                  bearing: 192.8334901395799,
+                  target: LatLng(lat, long),
+                  tilt: 10,
+                  zoom: 10,
+                ),
+                compassEnabled: true,
+                mapToolbarEnabled: true,
+                myLocationButtonEnabled: true,
+                zoomGesturesEnabled: true,
+                scrollGesturesEnabled: true,
+                markers: _markers,
+                onCameraMove: _onCameraMove,
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          mini: true,
+          onPressed: _removeMarkers,
+          materialTapTargetSize: MaterialTapTargetSize.padded,
+          backgroundColor: Colors.green,
+          child: const Icon(Icons.location_off, size: 26.0),
+        ),
+      );
+    }
+
+    void _onItemTapped(int index) {
+      setState(() {
+        _index = index;
+      });
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Perfil'),
-      ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-              icon: Icon(
-                Icons.perm_identity,
-                color: Colors.blueAccent,
-              ),
-              title: Text('perfil')),
+            icon: Icon(
+              Icons.perm_identity,
+              color: Colors.blueAccent,
+            ),
+            title: Text('perfil'),
+          ),
           BottomNavigationBarItem(
-              //icon: Icon(CupertinoIcons.location),
-              icon: Icon(
-                Icons.map,
-                color: Colors.deepOrange,
-              ),
-              title: Text('ubicacion')),
+            //icon: Icon(CupertinoIcons.location),
+            icon: Icon(
+              Icons.map,
+              color: Colors.deepOrange,
+            ),
+            title: Text('ubicacion'),
+          ),
         ],
+        currentIndex: _index,
+        onTap: _onItemTapped,
       ),
       drawer: DrawerMenu(),
-      body: _buildUbicacion(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: getImage,
-        tooltip: 'Pick Image',
-        child: Icon(Icons.add_a_photo),
-      ),
+      body: _index == 0 ? _buildPerfil() : _buildUbicacion(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: _index == 0
+          ? FloatingActionButton(
+              onPressed: getImage,
+              tooltip: 'Pick Image',
+              child: Icon(Icons.add_a_photo),
+            )
+          : null,
     );
   }
 }
