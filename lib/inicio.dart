@@ -243,26 +243,31 @@ class _InicioState extends State<Inicio> {
       );
     }
 
-    void _onCameraMove(CameraPosition position) {
+    /*  void _onCameraMove(CameraPosition position) {
       _mapPosition = position.target;
     }
-
+*/
     void _putMarker(LatLng pos) {
+      if (_markers.length == 1) {
+        _markers.clear();
+      }
       setState(() {
         _mapPosition = pos;
-        _markers.add(Marker(
-          markerId: MarkerId(_mapPosition.toString()),
-          position: _mapPosition,
-          infoWindow: InfoWindow(
-              title:
-                  'lat:${_mapPosition.latitude.toString()},long:${_mapPosition.longitude.toString()}'),
-        ));
+        _markers.add(
+          Marker(
+            markerId: MarkerId(_mapPosition.toString()),
+            position: _mapPosition,
+            infoWindow: InfoWindow(
+                title:
+                    'lat:${_mapPosition.latitude.toString()},long:${_mapPosition.longitude.toString()}'),
+          ),
+        );
       });
     }
 
     void _removeMarkers() {
       setState(() {
-        _markers = {};
+        _markers.clear();
       });
     }
 
@@ -275,13 +280,9 @@ class _InicioState extends State<Inicio> {
         body: Column(
           children: <Widget>[
             Container(
-              height: MediaQuery.of(context).size.height - 136,
+              height: MediaQuery.of(context).size.height - 183,
               width: MediaQuery.of(context).size.width,
               child: GoogleMap(
-                //mapa
-                onLongPress: (pos) {
-                  _putMarker(pos);
-                },
                 mapType: MapType.normal,
                 myLocationEnabled: true,
                 onMapCreated: (GoogleMapController controller) {
@@ -300,11 +301,15 @@ class _InicioState extends State<Inicio> {
                 zoomGesturesEnabled: true,
                 scrollGesturesEnabled: true,
                 markers: _markers,
-                onCameraMove: _onCameraMove,
+                //   onCameraMove: _onCameraMove,
+                onTap: (pos) {
+                  _putMarker(pos);
+                },
               ),
             ),
           ],
         ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: FloatingActionButton(
           mini: true,
           onPressed: _removeMarkers,
