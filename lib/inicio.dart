@@ -246,10 +246,7 @@ class _InicioState extends State<Inicio> {
           _markers.clear();
           posMarker = new LatLng(doc.data['ubicacion']['posicion'].latitude,
               doc.data['ubicacion']['posicion'].longitude);
-          setState(() {
-            mapInfo=true;
-          });
-         
+         _putMarker(posMarker);
         }
         
       } catch (error) {
