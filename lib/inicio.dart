@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -35,7 +36,9 @@ class _InicioState extends State<Inicio> {
   TextEditingController mapTextController = TextEditingController();
   double distance;
   String _address;
-  List <Placemark> placemark;
+  List<Placemark> placemark;
+  LatLng posMarker=new LatLng(40.6643, -73.9385);
+  bool mapInfo=false;
 
   @override
   void initState() {
@@ -158,6 +161,102 @@ class _InicioState extends State<Inicio> {
       return position;
     }
 
+    void _getAddress(double lati, double longi) async {
+      placemark = await Geolocator().placemarkFromCoordinates(lati, longi);
+
+      _address = placemark[0].name.toString() +
+          ',' +
+          placemark[0].locality.toString() +
+          ',' +
+          placemark[0].postalCode.toString();
+    }
+
+    void _putMarker(LatLng pos) async {
+      if (_markers.length == 1) {
+        _markers.clear();
+      }
+
+      setState(() {
+        _getAddress(_mapPosition.latitude, _mapPosition.longitude);
+        _mapPosition = pos;
+        _markers.add(
+          Marker(
+            markerId: MarkerId(_mapPosition.toString()),
+            position: _mapPosition,
+            infoWindow: InfoWindow(
+              title: _address,
+            ),
+          ),
+        );
+      });
+    }
+
+    void _updateMapInfo() async {
+      Firestore db = Firestore.instance;
+      FirebaseUser user = await FirebaseAuth.instance.currentUser();
+      String uid = user.uid;
+      await _getPosition();
+      Map<String, Map> nuevo;
+
+      nuevo = {
+        'ubicacion': {
+          'posicion': GeoPoint(lat, long),
+          'direccion': _markers.elementAt(0).infoWindow.title,
+        }
+      };
+      db.collection('usuarios').document(uid).updateData(nuevo);
+      print('Update map info completado');
+    }
+
+    void _buscarLugar() async {
+      try {
+        placemark = await Geolocator()
+            .placemarkFromAddress(mapTextController.text.trim());
+        print(placemark);
+        var lugarBuscado = LatLng(
+            placemark[0].position.latitude, placemark[0].position.longitude);
+        print(lugarBuscado);
+        _address = placemark[0].name.toString() +
+            ',' +
+            placemark[0].locality.toString() +
+            ',' +
+            placemark[0].postalCode.toString();
+        _putMarker(lugarBuscado);
+        mapController
+            .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
+          bearing: 192.8334901395799,
+          target: lugarBuscado,
+          tilt: 10,
+          zoom: 16,
+        )));
+      } catch (error) {
+        print(error);
+      }
+    }
+
+    void _isMapInfo() async {
+      try {
+        var doc = await Firestore.instance
+            .collection('usuarios')
+            .document(widget.uid)
+            .get();
+        if (doc.data['ubicacion'] != null) {
+          mapTextController.text =
+              doc.data['ubicacion']['direccion'].toString();
+          _markers.clear();
+          posMarker = new LatLng(doc.data['ubicacion']['posicion'].latitude,
+              doc.data['ubicacion']['posicion'].longitude);
+          setState(() {
+            mapInfo=true;
+          });
+         
+        }
+        
+      } catch (error) {
+        print(error);
+      }
+    }
+
     _buildPerfil() {
       return Scaffold(
         appBar: AppBar(
@@ -245,50 +344,8 @@ class _InicioState extends State<Inicio> {
         ),
       );
     }
-
-    void _getAddress(double lati,double longi)async{
-
-        placemark=await Geolocator().placemarkFromCoordinates(lati, longi);
-       _address=placemark[0].name.toString()+','+placemark[0].locality.toString()+','+placemark[0].postalCode.toString();   
-    }
-
-    void _putMarker(LatLng pos) {
-      if (_markers.length == 1) {
-        _markers.clear();
-      }
-      setState(() {
-        _mapPosition = pos;
-        _getAddress(_mapPosition.latitude, _mapPosition.longitude);
-        _markers.add(
-          Marker(
-            markerId: MarkerId(_mapPosition.toString()),
-            position: _mapPosition,
-            infoWindow: InfoWindow(
-                title: _address,
-          ),
-        ),
-      );
-      });
-       
-    }
-
-    void _removeMarkers() {
-      setState(() {
-        _markers.clear();
-      });
-    }
-
-    _buildListResults(){
-      return showModalBottomSheet();
-    }
-
-    void _buscarLugar() async{
-      placemark= await Geolocator().placemarkFromAddress(mapTextController.text.trim());
-      var lugarBuscado = LatLng(placemark[0].position.latitude,placemark[0].position.latitude);
-      _putMarker(lugarBuscado);
-    }
-
     _buildUbicacion() {
+       
       return Scaffold(
         appBar: AppBar(
           title: Text('Ubicaciones'),
@@ -305,12 +362,13 @@ class _InicioState extends State<Inicio> {
                 onMapCreated: (GoogleMapController controller) {
                   mapController = controller;
                   _getPosition();
+                  _isMapInfo();
                 },
                 initialCameraPosition: CameraPosition(
                   bearing: 192.8334901395799,
-                  target: LatLng(lat, long),
+                  target: posMarker,
                   tilt: 10,
-                  zoom: 10,
+                  zoom: 15,
                 ),
                 compassEnabled: true,
                 mapToolbarEnabled: true,
@@ -323,9 +381,8 @@ class _InicioState extends State<Inicio> {
                 },
               ),
             ),
-            
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.only(right: 8.0, top: 60, left: 8),
               child: Container(
                 decoration: BoxDecoration(
                     color: Colors.white70,
@@ -335,7 +392,6 @@ class _InicioState extends State<Inicio> {
                 child: TextField(
                   controller: mapTextController,
                   onEditingComplete: () {
-                    mapTextController.text;
                     _buscarLugar();
                   },
                   style: TextStyle(
@@ -358,10 +414,11 @@ class _InicioState extends State<Inicio> {
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
           mini: true,
-          onPressed: _removeMarkers,
+          onPressed: _updateMapInfo,
           materialTapTargetSize: MaterialTapTargetSize.padded,
           backgroundColor: Colors.green,
-          child: const Icon(Icons.location_off, size: 26.0),
+          child: const Icon(Icons.cloud_done, size: 26.0),
+          tooltip: 'guardar tu posicion y busqueda',
         ),
       );
     }
@@ -395,7 +452,7 @@ class _InicioState extends State<Inicio> {
         onTap: _onItemTapped,
       ),
       drawer: DrawerMenu(),
-      body: _index == 0 ? _buildPerfil() : _buildUbicacion(),
+      body: _index == 0 ? _buildPerfil() :  _buildUbicacion(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: _index == 0
           ? FloatingActionButton(
